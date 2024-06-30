@@ -90,7 +90,7 @@ websocket.on("request", (req) => {
     try {
       const data = JSON.parse(message.utf8Data);
       const user = findUser(data.name);
-      logToFile(user);
+      
       logToFile(`Received message: ${JSON.stringify(data)}`);
 
       switch (data.type) {
@@ -174,7 +174,7 @@ websocket.on("request", (req) => {
         case "end_call":
           let userToEndCall = findUser(data.target);
           if (userToEndCall) {
-            userToReceiveOffer.conn.send(
+            userToEndCall.conn.send(
               JSON.stringify({
                 type: "end_call",
                 name: data.name,
