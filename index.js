@@ -173,7 +173,7 @@ websocket.on("request", (req) => {
 
         case "end_call":
           let userToEndCall = findUser(data.target);
-          if (userToReceiveOffer) {
+          if (userToEndCall) {
             userToReceiveOffer.conn.send(
               JSON.stringify({
                 type: "end_call",
