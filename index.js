@@ -170,6 +170,21 @@ websocket.on("request", (req) => {
             logToFile(`ICE candidate sent to ${data.target} by ${data.name}.`);
           }
           break;
+
+        case "end_call":
+          let userToEndCall = findUser(data.target);
+          if (userToReceiveOffer) {
+            userToReceiveOffer.conn.send(
+              JSON.stringify({
+                type: "end_call",
+                name: data.name,
+                data: "",
+              })
+            );
+            logToFile(`Call Ended by ${data.name} to ${data.target}.`);
+          }
+          break;
+
       }
     } catch (error) {
       logToFile(`Received message: ${message.utf8Data}`);
