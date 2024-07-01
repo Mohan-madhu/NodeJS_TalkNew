@@ -105,6 +105,14 @@ websocket.on("request", (req) => {
             conn: connection,
           };
           users.push(newUser);
+          for (eachuser in users){
+            onlineUsers = users.map((user) =>{
+              if(user.name!=eachuser.name){
+                user.name
+              }
+            } )
+            eachuser.conn.send(JSON.stringify({type:"online_users",data:onlineUsers}))
+          }
           logToFile(`User ${data.name} stored.`);
           break;
 
