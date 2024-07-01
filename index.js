@@ -2,7 +2,7 @@ const http = require("http");
 const WebSocketServer = require("websocket").server;
 const fs = require("fs");
 const path = require("path");
-const { DateTime } = require('luxon');
+const { DateTime } = require("luxon");
 
 const server = http.createServer((req, res) => {
   if (req.url === "/users") {
@@ -75,12 +75,14 @@ const websocket = new WebSocketServer({
 
 // Function to log messages to console and file with timestamp
 const logToFile = (message) => {
-    const istDateTime = DateTime.now().setZone('Asia/Kolkata').toLocaleString(DateTime.DATETIME_FULL);
-    const log = `• ${istDateTime} - ${message}\n`;
-    console.log(log); // Output to console
-    fs.appendFile(path.join(__dirname, 'server.log'), log, (err) => {
-        if (err) console.error('Error writing to log file:', err);
-    }); // Append to log file
+  const istDateTime = DateTime.now()
+    .setZone("Asia/Kolkata")
+    .toLocaleString(DateTime.DATETIME_FULL);
+  const log = `• ${istDateTime} - ${message}\n`;
+  console.log(log); // Output to console
+  fs.appendFile(path.join(__dirname, "server.log"), log, (err) => {
+    if (err) console.error("Error writing to log file:", err);
+  }); // Append to log file
 };
 
 websocket.on("request", (req) => {
@@ -90,7 +92,7 @@ websocket.on("request", (req) => {
     try {
       const data = JSON.parse(message.utf8Data);
       const user = findUser(data.name);
-      
+
       logToFile(`Received message: ${JSON.stringify(data)}`);
 
       switch (data.type) {
@@ -108,16 +110,19 @@ websocket.on("request", (req) => {
 
           for (let eachuser of users) {
             let onlineUsers = users
-                .filter(user => user.name !== eachuser.name)
-                .map(user => user.name);
-        
-            if (eachuser.conn && typeof eachuser.conn.send === 'function') {
-                eachuser.conn.send(JSON.stringify({ type: "online_users", data: onlineUsers }));
-            } else {
-                console.error(`Connection for user ${eachuser.name} is not available.`);
-            }
-        }
+              .filter((user) => user.name !== eachuser.name)
+              .map((user) => user.name);
 
+            if (eachuser.conn && typeof eachuser.conn.send === "function") {
+              eachuser.conn.send(
+                JSON.stringify({ type: "online_users", data: onlineUsers })
+              );
+            } else {
+              console.error(
+                `Connection for user ${eachuser.name} is not available.`
+              );
+            }
+          }
 
           logToFile(`User ${data.name} stored.`);
           logToFile(`Online Users ${users.map((user) => user.name)} .`);
@@ -199,7 +204,6 @@ websocket.on("request", (req) => {
             logToFile(`Call Ended by ${data.name} to ${data.target}.`);
           }
           break;
-
       }
     } catch (error) {
       logToFile(`Received message: ${message.utf8Data}`);
@@ -211,36 +215,35 @@ websocket.on("request", (req) => {
   });
 
   connection.on("close", () => {
-   
     users.forEach((user) => {
       if (user.conn === connection) {
         logToFile(`Connection closed for ${user.name}.`);
         users.splice(users.indexOf(user), 1);
+        logToFile(users);
       }
     });
     for (let eachuser of users) {
       let onlineUsers = users
-          .filter(user => user.name !== eachuser.name)
-          .map(user => user.name);
-  
-      if (eachuser.conn && typeof eachuser.conn.send === 'function') {
-          eachuser.conn.send(JSON.stringify({ type: "online_users", data: onlineUsers }));
+        .filter((user) => user.name !== eachuser.name)
+        .map((user) => user.name);
+
+      if (eachuser.conn && typeof eachuser.conn.send === "function") {
+        eachuser.conn.send(
+          JSON.stringify({ type: "online_users", data: onlineUsers })
+        );
       } else {
-          console.error(`Connection for user ${eachuser.name} is not available.`);
+        console.error(`Connection for user ${eachuser.name} is not available.`);
       }
-  }
+    }
     logToFile(`Online Users ${users.map((user) => user.name)} .`);
-l̥
-
-
+    
   });
 });
 
-
-const findUser = username =>{
-    for (let i =0;i<users.length;i++){
-        if(users[i].name == username ){
-            return users[i]
-        }
+const findUser = (username) => {
+  for (let i = 0; i < users.length; i++) {
+    if (users[i].name == username) {
+      return users[i];
     }
-}
+  }
+};
