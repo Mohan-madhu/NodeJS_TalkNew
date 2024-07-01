@@ -211,12 +211,28 @@ websocket.on("request", (req) => {
   });
 
   connection.on("close", () => {
+   
     users.forEach((user) => {
       if (user.conn === connection) {
         logToFile(`Connection closed for ${user.name}.`);
         users.splice(users.indexOf(user), 1);
       }
     });
+    for (let eachuser of users) {
+      let onlineUsers = users
+          .filter(user => user.name !== eachuser.name)
+          .map(user => user.name);
+  
+      if (eachuser.conn && typeof eachuser.conn.send === 'function') {
+          eachuser.conn.send(JSON.stringify({ type: "online_users", data: onlineUsers }));
+      } else {
+          console.error(`Connection for user ${eachuser.name} is not available.`);
+      }
+  }
+    logToFile(`Online Users ${users.map((user) => user.name)} .`);
+l̥
+
+
   });
 });
 
