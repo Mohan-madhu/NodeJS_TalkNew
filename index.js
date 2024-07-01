@@ -105,15 +105,22 @@ websocket.on("request", (req) => {
             conn: connection,
           };
           users.push(newUser);
-          for (eachuser in users){
-            onlineUsers = users.map((user) =>{
-              if(user.name!=eachuser.name){
-                user.name
-              }
-            } )
-            eachuser.conn.send(JSON.stringify({type:"online_users",data:onlineUsers}))
-          }
+
+          for (let eachuser of users) {
+            let onlineUsers = users
+                .filter(user => user.name !== eachuser.name)
+                .map(user => user.name);
+        
+            if (eachuser.conn && typeof eachuser.conn.send === 'function') {
+                eachuser.conn.send(JSON.stringify({ type: "online_users", data: onlineUsers }));
+            } else {
+                console.error(`Connection for user ${eachuser.name} is not available.`);
+            }
+        }
+
+
           logToFile(`User ${data.name} stored.`);
+          logToFile(`Online Users ${users.map((user) => user.name)} .`);
           break;
 
         case "start_call":
