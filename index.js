@@ -260,7 +260,7 @@ const sendOnlineUsers = () => {
     let onlineUsers = users
       .filter(
         (user) =>
-          user.name !== eachuser.name && !usersIncall.includes(user.name)
+          user.name !== eachuser.name 
       )
       .map((user) => user.name);
 
