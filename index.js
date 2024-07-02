@@ -6,18 +6,27 @@ const { DateTime } = require("luxon");
 
 const server = http.createServer((req, res) => {
   if (req.url === "/users") {
-    // Handle GET request for users
+
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(JSON.stringify(users.map((user) => user.name)));
+  } else if (req.url === "/dellog") {
+    fs.unlink("server.log", (err) => {
+      if (err) {
+        console.error(`Error deleting the file: ${err}`);
+        return;
+      }
+      console.log('File deleted successfully!');
+      res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({message:"Deleted"}));
+    });
+    
   } else if (req.url === "/log") {
-    // Handle GET request for log file
     fs.readFile(path.join(__dirname, "server.log"), "utf8", (err, data) => {
       if (err) {
         res.writeHead(500);
         res.end("Error reading log file");
         return;
       }
-      // Split log entries, reverse order, and format as list items
       const logs = data
         .trim()
         .split("\n")
@@ -48,7 +57,7 @@ const server = http.createServer((req, res) => {
                             .then(data => {
                                 document.querySelector('ul').innerHTML = data;
                             });
-                    }, 5000);
+                    }, 60000);
                 </script>
             </body>
             </html>
@@ -64,6 +73,7 @@ const server = http.createServer((req, res) => {
 
 const PORT = 3000;
 const users = [];
+const usersIncall = [];
 
 server.listen(PORT, () => {
   console.log("Server Started...");
@@ -108,22 +118,6 @@ websocket.on("request", (req) => {
           };
           users.push(newUser);
 
-          for (let eachuser of users) {
-            let onlineUsers = users
-              .filter((user) => user.name !== eachuser.name)
-              .map((user) => user.name);
-
-            if (eachuser.conn && typeof eachuser.conn.send === "function") {
-              eachuser.conn.send(
-                JSON.stringify({ type: "online_users", data: onlineUsers })
-              );
-            } else {
-              console.error(
-                `Connection for user ${eachuser.name} is not available.`
-              );
-            }
-          }
-
           logToFile(`User ${data.name} stored.`);
           logToFile(`Online Users ${users.map((user) => user.name)} .`);
           break;
@@ -156,6 +150,13 @@ websocket.on("request", (req) => {
               })
             );
             logToFile(`Offer sent to ${data.target} by ${data.name}.`);
+            if (!usersIncall.includes(data.name)) {
+              usersIncall.push(data.name);
+            }
+            if (!usersIncall.includes(data.target)) {
+              usersIncall.push(data.target);
+            }
+            sendOnlineUsers();
           }
           break;
 
@@ -170,6 +171,13 @@ websocket.on("request", (req) => {
               })
             );
             logToFile(`Answer sent to ${data.target} by ${data.name}.`);
+            if (!usersIncall.includes(data.name)) {
+              usersIncall.push(data.name);
+            }
+            if (!usersIncall.includes(data.target)) {
+              usersIncall.push(data.target);
+            }
+            sendOnlineUsers();
           }
           break;
 
@@ -202,6 +210,15 @@ websocket.on("request", (req) => {
               })
             );
             logToFile(`Call Ended by ${data.name} to ${data.target}.`);
+            if (usersIncall.includes(data.name)) {
+              const index = usersIncall.indexOf(data.name);
+              usersIncall.splice(index, 1);
+            }
+            if (usersIncall.includes(data.target)) {
+              const index = usersIncall.indexOf(data.target);
+              usersIncall.splice(index, 1);
+            }
+            sendOnlineUsers();
           }
           break;
       }
@@ -218,25 +235,15 @@ websocket.on("request", (req) => {
     users.forEach((user) => {
       if (user.conn === connection) {
         logToFile(`Connection closed for ${user.name}.`);
+        if (usersIncall.includes(user.name)) {
+          const index = usersIncall.indexOf(user.name);
+          usersIncall.splice(index, 1);
+        }
         users.splice(users.indexOf(user), 1);
         logToFile(users);
       }
     });
-    for (let eachuser of users) {
-      let onlineUsers = users
-        .filter((user) => user.name !== eachuser.name)
-        .map((user) => user.name);
-
-      if (eachuser.conn && typeof eachuser.conn.send === "function") {
-        eachuser.conn.send(
-          JSON.stringify({ type: "online_users", data: onlineUsers })
-        );
-      } else {
-        console.error(`Connection for user ${eachuser.name} is not available.`);
-      }
-    }
-    logToFile(`Online Users ${users.map((user) => user.name)} .`);
-    
+    sendOnlineUsers();
   });
 });
 
@@ -246,4 +253,24 @@ const findUser = (username) => {
       return users[i];
     }
   }
+};
+
+const sendOnlineUsers = () => {
+  for (let eachuser of users) {
+    let onlineUsers = users
+      .filter(
+        (user) =>
+          user.name !== eachuser.name && !usersIncall.includes(user.name)
+      )
+      .map((user) => user.name);
+
+    if (eachuser.conn && typeof eachuser.conn.send === "function") {
+      eachuser.conn.send(
+        JSON.stringify({ type: "online_users", data: onlineUsers })
+      );
+    } else {
+      console.error(`Connection for user ${eachuser.name} is not available.`);
+    }
+  }
+  logToFile(`Online Users ${users.map((user) => user.name)} .`);
 };
