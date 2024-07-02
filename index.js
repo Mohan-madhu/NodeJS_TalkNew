@@ -104,6 +104,7 @@ websocket.on("request", (req) => {
       const user = findUser(data.name);
 
       logToFile(`Received message: ${JSON.stringify(data)}`);
+      logToFile(`Received Type: ${data.type}`);
 
       switch (data.type) {
         case "store_user":
@@ -117,7 +118,7 @@ websocket.on("request", (req) => {
             conn: connection,
           };
           users.push(newUser);
-
+          sendOnlineUsers();
           logToFile(`User ${data.name} stored.`);
           logToFile(`Online Users ${users.map((user) => user.name)} .`);
           break;
@@ -130,6 +131,13 @@ websocket.on("request", (req) => {
               JSON.stringify({ type: "call_response", data: responseMsg })
             );
             logToFile(responseMsg);
+            if (!usersIncall.includes(data.name)) {
+              usersIncall.push(data.name);
+            }
+            if (!usersIncall.includes(data.target)) {
+              usersIncall.push(data.target);
+            }
+            sendOnlineUsers();
           } else {
             const responseMsg = "User is not online...";
             connection.send(
@@ -260,7 +268,7 @@ const sendOnlineUsers = () => {
     let onlineUsers = users
       .filter(
         (user) =>
-          user.name !== eachuser.name 
+          user.name !== eachuser.name && !usersIncall.includes(user.name)
       )
       .map((user) => user.name);
 
