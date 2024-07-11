@@ -96,7 +96,7 @@ const logToFile = (message) => {
         minute: '2-digit', 
         second: '2-digit' 
     });
-  const log = `• ${istDateTime} -\n ${message}\n\n\n`;
+  const log = `• ${istDateTime} - ${message}` + '\n\n';
   console.log(log); // Output to console
   fs.appendFile(path.join(__dirname, "server.log"), log, (err) => {
     if (err) console.error("Error writing to log file:", err);
