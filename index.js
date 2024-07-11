@@ -87,8 +87,16 @@ const websocket = new WebSocketServer({
 const logToFile = (message) => {
   const istDateTime = DateTime.now()
     .setZone("Asia/Kolkata")
-    .toLocaleString(DateTime.DATETIME_FULL);
-  const log = `• ${istDateTime} - ${message}\n`;
+    .toLocaleString({ 
+        weekday: 'long', 
+        month: 'long', 
+        day: '2-digit', 
+        year: 'numeric', 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit' 
+    });
+  const log = `• ${istDateTime} -\n ${message}\n\n\n`;
   console.log(log); // Output to console
   fs.appendFile(path.join(__dirname, "server.log"), log, (err) => {
     if (err) console.error("Error writing to log file:", err);
@@ -109,9 +117,13 @@ websocket.on("request", (req) => {
       switch (data.type) {
         case "store_user":
           if (user != null) {
-            connection.send(JSON.stringify({ type: "User Already Exists..." }));
-            logToFile(`User ${data.name} already exists.`);
-            return;
+          //  connection.send(JSON.stringify({ type: "User Already Exists..." }));
+          //  logToFile(`User ${data.name} already exists.`);
+           // return;
+
+
+           users.splice(users.indexOf(user), 1);
+           logToFile(`Overwriting User ${data.name} .`);
           }
           const newUser = {
             name: data.name,
@@ -120,7 +132,7 @@ websocket.on("request", (req) => {
           users.push(newUser);
           sendOnlineUsers();
           logToFile(`User ${data.name} stored.`);
-          logToFile(`Online Users ${users.map((user) => user.name)} .`);
+         // logToFile(`Online Users ${users.map((user) => user.name)} .`);
           break;
 
         case "start_call":
